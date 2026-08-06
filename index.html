@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="theme-color" content="#1e1e1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="AGAM">
+<title>AGAM — Library & Coaching</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="launchericon-192x192.png">
+<link rel="icon" type="image/png" href="launchericon-192x192.png">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+/* ══ ALL CSS FROM UPLOADED LIBRARY APP (unchanged) ══ */
+:root {
+  --bg: #f5f4f0; --surface: #ffffff; --surface2: #f0efe9; --border: #e2e0d8;
+  --dark: #1e1e1e; --dark2: #2d2d2d; --gold: #c9a84c; --gold2: #f0c060;
+  --red: #d94040; --green: #2d8a4e; --orange: #d97706; --blue: #1a58b8;
+  --text: #1e1e1e; --muted: #7a7870;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { height: 100%; }
+body { font-family:'Nunito',-apple-system,BlinkMacSystemFont,sans-serif; background:var(--bg); color:var(--text); height:100%; height:100dvh; overflow:hidden; -webkit-font-smoothing:antialiased; }
+
+/* SPLASH */
+#splash { position:fixed; inset:0; background:var(--dark); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:9999; transition:opacity 0.5s,transform 0.5s; }
+#splash.hide { opacity:0; transform:scale(1.05); pointer-events:none; }
+.splash-logo { animation:pop 0.6s cubic-bezier(.175,.885,.32,1.275) 0.2s both; }
+.splash-title { font-family:'Rajdhani',sans-serif; font-size:40px; font-weight:700; color:#fff; letter-spacing:6px; margin-top:18px; animation:fadeUp 0.5s ease 0.7s both; }
+.splash-sub { color:var(--gold); font-size:13px; letter-spacing:3px; text-transform:uppercase; margin-top:6px; animation:fadeUp 0.5s ease 0.9s both; }
+.splash-loader { margin-top:40px; display:flex; gap:6px; animation:fadeUp 0.3s ease 1.1s both; }
+.dot { width:7px; height:7px; background:var(--gold); border-radius:50%; animation:bounce 1.2s ease-in-out infinite; }
+.dot:nth-child(2){animation-delay:0.15s} .dot:nth-child(3){animation-delay:0.3s}
+@keyframes bounce{0%,80%,100%{transform:scale(0.8);opacity:0.5}40%{transform:scale(1.2);opacity:1}}
+@keyframes pop{from{transform:scale(0.4);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* STATUS BARS */
+#offline-bar { display:none; background:var(--red); color:#fff; text-align:center; font-size:12px; font-weight:700; padding:5px; }
+#offline-bar.show { display:block; }
+#sync-bar { display:none; background:#1a6030; color:#fff; text-align:center; font-size:11px; font-weight:600; padding:4px; }
+#sync-bar.show { display:block; }
+
+/* APP */
+#app { display:flex; flex-direction:column; height:100%; height:100dvh; overflow:hidden; }
+
+/* HEADER — from uploaded app, plus toggle on right */
+.header { background:var(--dark); padding:0 16px; padding-top:var(--safe-top); display:flex; align-items:center; justify-content:space-between; height:calc(58px + var(--safe-top)); flex-shrink:0; box-shadow:0 2px 10px rgba(0,0,0,0.3); }
+.header-brand { display:flex; align-items:center; gap:10px; }
+.header-brand .name { font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700; color:#fff; letter-spacing:2px; }
+.header-brand .sub { font-size:10px; color:var(--gold); letter-spacing:1.5px; text-transform:uppercase; display:block; line-height:1; }
+.header-right { display:flex; align-items:center; gap:10px; }
+
+/* MODE TOGGLE — top right corner icon switch */
+.mode-wrap { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.mode-toggle-btn { width:52px; height:28px; background:#333; border-radius:14px; border:none; cursor:pointer; position:relative; transition:background .3s; flex-shrink:0; }
+.mode-toggle-btn.coaching { background:#1a3a6a; }
+.mode-toggle-btn::after { content:''; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:var(--gold); transition:all .3s; }
+.mode-toggle-btn.coaching::after { left:calc(100% - 25px); background:#6ab0ff; }
+.mode-icon { position:absolute; top:50%; transform:translateY(-50%); font-size:12px; transition:opacity .3s; pointer-events:none; }
+.mode-icon-lib { right:6px; }
+.mode-icon-coa { left:6px; opacity:0; }
+.mode-toggle-btn.coaching .mode-icon-lib { opacity:0; }
+.mode-toggle-btn.coaching .mode-icon-coa { opacity:1; }
+.mode-lbl { font-family:'Rajdhani',sans-serif; font-size:11px; font-weight:700; color:var(--gold); letter-spacing:.5px; }
+.mode-toggle-btn.coaching + .mode-lbl { color:#6ab0ff; }
+
+/* Sync button */
+#sync-btn { background:none; border:1px solid #555; border-radius:6px; color:#999; font-size:11px; font-weight:700; padding:5px 8px; cursor:pointer; white-space:nowrap; }
+#sync-btn.live { color:#4cff90; border-color:#4cff90; }
+
+/* TABS — from uploaded app */
+.tabs { display:flex; background:var(--dark2); flex-shrink:0; }
+.tab-btn { flex:1; padding:11px 4px; background:none; border:none; color:#888; font-family:'Nunito',sans-serif; font-size:11.5px; font-weight:600; cursor:pointer; border-bottom:2px solid transparent; transition:all 0.2s; text-align:center; }
+.tab-btn.active { color:var(--gold); border-bottom-color:var(--gold); }
+
+/* CONTENT */
+.content { flex:1; overflow-y:auto; padding:16px 14px; -webkit-overflow-scrolling:touch; padding-bottom:calc(80px + var(--safe-bottom)); }
+.content::-webkit-scrollbar { width:3px; }
+.content::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.page { display:none; }
+.page.active { display:block; }
+
+/* STATS — from uploaded app */
+.stats-row { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px; }
+.stat-box { background:var(--surface); border-radius:12px; padding:14px; box-shadow:var(--shadow); border-left:3px solid var(--border); }
+.stat-box.s-green{border-left-color:var(--green)} .stat-box.s-red{border-left-color:var(--red)} .stat-box.s-gold{border-left-color:var(--gold)} .stat-box.s-dark{border-left-color:var(--dark)} .stat-box.s-blue{border-left-color:var(--blue)}
+.stat-lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.8px; }
+.stat-val { font-family:'Rajdhani',sans-serif; font-size:28px; font-weight:700; line-height:1.1; margin-top:2px; }
+.stat-box.s-green .stat-val{color:var(--green)} .stat-box.s-red .stat-val{color:var(--red)} .stat-box.s-gold .stat-val{color:var(--gold)} .stat-box.s-blue .stat-val{color:var(--blue)}
+
+/* SECTION HEAD */
+.sec-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.sec-title { font-family:'Rajdhani',sans-serif; font-size:17px; font-weight:700; letter-spacing:0.5px; }
+
+/* SEARCH BAR — from uploaded app */
+.search-bar { background:var(--surface); border:1px solid var(--border); border-radius:10px; display:flex; align-items:center; padding:9px 12px; gap:8px; margin-bottom:12px; }
+.search-bar input { flex:1; background:none; border:none; outline:none; font-family:'Nunito',sans-serif; font-size:14px; color:var(--text); }
+.search-bar input::placeholder { color:var(--muted); }
+
+/* CHIPS — from uploaded app */
+.chips { display:flex; gap:7px; margin-bottom:12px; overflow-x:auto; padding-bottom:2px; }
+.chips::-webkit-scrollbar { display:none; }
+.chip { flex-shrink:0; padding:6px 14px; border-radius:20px; border:1.5px solid var(--border); background:var(--surface); font-family:'Nunito',sans-serif; font-size:12px; font-weight:700; cursor:pointer; transition:all .15s; color:var(--muted); }
+.chip.active { background:var(--dark); color:#fff; border-color:var(--dark); }
+
+/* MEMBER CARD — from uploaded app (exact class names) */
+.member-card { background:var(--surface); border-radius:14px; padding:14px; margin-bottom:10px; box-shadow:var(--shadow); border:1.5px solid var(--border); cursor:pointer; transition:transform 0.15s; position:relative; overflow:hidden; }
+.member-card:active { transform:scale(0.98); }
+.member-card.expired { border-color:#fca5a5; background:#fff9f9; }
+.member-card.expiring { border-color:#fcd34d; background:#fffdf4; }
+.member-card.has-dues { border-color:#93c5fd; background:#f0f6ff; }
+.member-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; }
+.member-card.expired::before { background:var(--red); }
+.member-card.expiring::before { background:var(--orange); }
+.member-card.active-m::before { background:var(--green); }
+.member-card.has-dues::before { background:var(--blue); }
+.mc-top { display:flex; justify-content:space-between; align-items:flex-start; }
+.mc-name { font-size:16px; font-weight:700; }
+.mc-father { font-size:12px; color:var(--muted); margin-top:2px; }
+.mc-badges { display:flex; gap:4px; flex-wrap:wrap; margin-left:8px; justify-content:flex-end; }
+.badge { font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0; }
+.badge-active{background:#dcfce7;color:#166534} .badge-expired{background:#fee2e2;color:#991b1b} .badge-expiring{background:#fef9c3;color:#854d0e} .badge-dues{background:#dbeafe;color:#1e40af}
+.mc-grid { margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.mc-info { font-size:11px; color:var(--muted); }
+.mc-info span { color:var(--text); font-weight:700; display:block; font-size:13px; margin-top:1px; }
+.mc-actions { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+
+/* DUES SUMMARY BAR — new addition */
+.dues-bar { background:#eff6ff; border:1.5px solid #93c5fd; border-radius:11px; padding:12px 14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; }
+.dues-bar-lbl { font-size:10px; color:var(--blue); font-weight:700; text-transform:uppercase; letter-spacing:0.6px; }
+.dues-bar-amt { font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700; color:var(--blue); }
+
+/* BUTTONS — from uploaded app */
+.btn { padding:9px 16px; border-radius:9px; border:none; font-family:'Nunito',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:all .15s; letter-spacing:0.2px; }
+.btn:active { opacity:.8; transform:scale(.97); }
+.btn-dark{background:var(--dark);color:#fff} .btn-gold{background:var(--gold);color:#fff} .btn-outline{background:none;border:1.5px solid var(--border);color:var(--text)} .btn-red{background:#fee2e2;color:var(--red);border:1px solid #fca5a5} .btn-green{background:#dcfce7;color:var(--green);border:1px solid #86efac} .btn-blue{background:#dbeafe;color:var(--blue);border:1px solid #93c5fd}
+.btn-sm{padding:6px 12px;font-size:12px} .btn-full{width:100%}
+
+/* FAB */
+.fab { position:fixed; right:20px; bottom:calc(24px + var(--safe-bottom)); width:58px; height:58px; background:var(--dark); color:#fff; border:none; border-radius:50%; font-size:30px; font-weight:300; cursor:pointer; box-shadow:0 4px 20px rgba(0,0,0,0.25); display:flex; align-items:center; justify-content:center; z-index:50; transition:transform .15s; }
+.fab:active { transform:scale(0.92); }
+
+/* MODAL — from uploaded app */
+.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:200; align-items:flex-end; justify-content:center; backdrop-filter:blur(4px); }
+.overlay.show { display:flex; }
+.modal { background:var(--surface); border-radius:22px 22px 0 0; width:100%; max-width:580px; max-height:92vh; overflow-y:auto; animation:slideUp 0.32s cubic-bezier(.175,.885,.32,1.1); padding-bottom:var(--safe-bottom); }
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
+.modal-handle { width:36px; height:4px; background:var(--border); border-radius:2px; margin:12px auto 0; }
+.modal-head { padding:14px 20px 12px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:var(--surface); z-index:1; }
+.modal-head h3 { font-family:'Rajdhani',sans-serif; font-size:20px; font-weight:700; }
+.modal-close { background:var(--surface2); border:none; width:30px; height:30px; border-radius:50%; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--muted); }
+.modal-body { padding:16px 20px 20px; }
+
+/* FORM — from uploaded app */
+.form-group { margin-bottom:14px; }
+.form-label { display:block; font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:5px; }
+.form-input { width:100%; background:var(--surface2); border:1.5px solid var(--border); border-radius:9px; padding:11px 13px; font-family:'Nunito',sans-serif; font-size:14px; color:var(--text); outline:none; transition:border-color .15s; box-shadow:0 4px 20px rgba(0,0,0,0.25); }
+.form-input:focus { border-color:var(--dark); background:#fff; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.form-section { background:var(--surface2); border-radius:10px; padding:14px; margin-bottom:14px; border:1px solid var(--border); }
+.form-section-title { font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:700; margin-bottom:11px; text-transform:uppercase; letter-spacing:.5px; padding-bottom:8px; border-bottom:1px solid var(--border); color:var(--dark); }
+
+/* TIME SLOTS — from uploaded app */
+.time-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+.time-opt { padding:11px 8px; border:1.5px solid var(--border); border-radius:9px; text-align:center; cursor:pointer; font-size:12px; font-weight:700; background:var(--surface2); transition:all .15s; }
+.time-opt.selected { background:var(--dark); color:#fff; border-color:var(--dark); }
+
+/* DETAIL VIEW — from uploaded app */
+.detail-section { background:var(--surface2); border-radius:10px; padding:14px; margin-bottom:12px; }
+.detail-row { display:flex; justify-content:space-between; align-items:flex-start; padding:6px 0; border-bottom:1px solid var(--border); font-size:13px; gap:8px; }
+.detail-row:last-child { border-bottom:none; }
+.detail-row .lbl { color:var(--muted); flex-shrink:0; font-size:12px; }
+.detail-row .val { font-weight:700; text-align:right; }
+
+/* ALARM CARDS — from uploaded app */
+.alarm-card { background:#fff9f9; border:1px solid #fca5a5; border-left:4px solid var(--red); border-radius:11px; padding:14px; margin-bottom:8px; }
+.alarm-card.warn { background:#fffdf0; border-color:#fcd34d; border-left-color:var(--orange); }
+.alarm-card.dues { background:#f0f6ff; border-color:#93c5fd; border-left-color:var(--blue); }
+.alarm-name { font-size:15px; font-weight:800; }
+.alarm-info { font-size:12px; color:var(--muted); margin-top:3px; }
+
+/* REPORT */
+.report-block { background:var(--surface); border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:var(--shadow); }
+.report-block h4 { font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:700; margin-bottom:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+.bar-row { margin-bottom:10px; }
+.bar-lbl { display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; }
+.bar-track { background:var(--surface2); border-radius:4px; height:8px; overflow:hidden; }
+.bar-fill { height:100%; border-radius:4px; transition:width .6s ease; background:var(--dark); }
+
+/* INSTALL BANNER — from uploaded app */
+/* #install-banner { display:none; background:linear-gradient(135deg,var(--dark),#2d2d2d); border-radius:12px; padding:14px 16px; margin-bottom:14px; align-items:center; gap:12px; }
+#install-banner.show { display:flex; }
+.install-text { flex:1; color:#fff; font-size:13px; font-weight:600; }
+.install-text span { display:block; font-size:11px; color:var(--gold); font-weight:400; margin-top:2px; } */
+
+/* EMPTY STATE — from uploaded app */
+.empty-state { text-align:center; padding:48px 20px; color:var(--muted); }
+.empty-icon { font-size:52px; margin-bottom:12px; }
+.empty-text { font-size:14px; line-height:1.5; }
+
+/* TOAST */
+#toast { position:fixed; bottom:calc(88px + var(--safe-bottom)); left:50%; transform:translateX(-50%) translateY(20px); background:var(--dark); color:#fff; padding:10px 22px; border-radius:22px; font-size:13px; font-weight:600; opacity:0; transition:all .3s; z-index:999; pointer-events:none; white-space:nowrap; max-width:90vw; text-align:center; }
+
+/* COACHING SECTION — different styling only where needed */
+.coaching-card { background:var(--surface); border-radius:14px; padding:14px; margin-bottom:10px; box-shadow:var(--shadow); border:1.5px solid var(--border); cursor:pointer; transition:transform .15s; position:relative; overflow:hidden; }
+.coaching-card:active { transform:scale(.98); }
+.coaching-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:#1a58b8; }
+
+/* SETUP MODAL */
+.setup-step { background:var(--surface); border:1.5px solid var(--border); border-radius:10px; padding:13px; margin-bottom:10px; }
+.step-num { background:var(--dark); color:#fff; width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; margin-right:8px; }
+.step-title { font-size:13px; font-weight:700; display:flex; align-items:center; margin-bottom:8px; }
+.step-body { font-size:12px; color:var(--muted); line-height:1.7; padding-left:32px; }
+.code-box { background:var(--dark); color:#4cff90; padding:10px 12px; border-radius:7px; font-family:monospace; font-size:12px; margin-top:8px; word-break:break-all; line-height:1.5; }
+
+/* PHOTO UPLOAD */
+.pgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.pbox { aspect-ratio:3/4; border:2px dashed var(--border); border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; background:var(--surface); overflow:hidden; position:relative; transition:border-color .15s; }
+.pbox:active { border-color:var(--dark); }
+.pbox img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
+.plbl { font-size:10px; color:var(--muted); text-align:center; padding:4px; position:relative; z-index:1; }
+.pico { font-size:22px; margin-bottom:3px; position:relative; z-index:1; }
+.pbox.has .plbl,.pbox.has .pico { display:none; }
+.pdel { position:absolute; top:4px; right:4px; background:rgba(0,0,0,.6); color:#fff; border:none; border-radius:50%; width:22px; height:22px; font-size:13px; cursor:pointer; display:none; align-items:center; justify-content:center; z-index:2; }
+.pbox.has .pdel { display:flex; }
+
+/* CHECKBOXES */
+.cbgrid { display:grid; grid-template-columns:repeat(2,1fr); gap:7px; }
+.cbi { display:flex; align-items:center; gap:8px; padding:9px 11px; background:var(--surface); border:1.5px solid var(--border); border-radius:8px; cursor:pointer; transition:all .15s; }
+.cbi.on { background:#dcfce7; border-color:#86efac; }
+.cbi input { width:16px; height:16px; accent-color:var(--green); cursor:pointer; flex-shrink:0; }
+.cbi label { font-size:12px; font-weight:700; cursor:pointer; color:var(--muted); }
+.cbi.on label { color:var(--green); }
+
+@media(min-width:600px){ .pgrid{grid-template-columns:repeat(4,1fr)} }
+</style>
+</head>
+<body>
+
+<!-- SPLASH — from uploaded app -->
+<div id="splash">
+  <div class="splash-logo">
+    <img src="AGAM.png" width="120" height="120" style="border-radius:16px;">
+  </div>
+  <div class="splash-title">AGAM</div>
+  <div class="splash-sub" id="splash-sub">By Lakshay Sinha</div>
+  <div class="splash-loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+</div>
+
+<div id="app">
+  <!-- <div id="offline-bar">📴 You are offline — App works fully offline</div> -->
+  <div id="sync-bar">🔄 Syncing with cloud...</div>
+
+  <!-- HEADER — exact from uploaded app + toggle + sync -->
+  <div class="header">
+    <div class="header-brand">
+      <img src="AGAM.png" width="40" height="40" style="border-radius:8px;">
+      <div>
+        <div class="name">AGAM</div>
+        <div class="sub" id="hdr-sub">Self Study Library</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <button id="sync-btn" onclick="openSetup()">☁ <span id="sync-txt">Sync</span></button>
+      <!-- MODE TOGGLE TOP RIGHT -->
+      <div class="mode-wrap">
+        <button class="mode-toggle-btn" id="mode-toggle-btn" onclick="toggleMode()" title="Switch Library / Coaching">
+          <span class="mode-icon mode-icon-lib">📚</span>
+          <span class="mode-icon mode-icon-coa">🎓</span>
+        </button>
+        <span class="mode-lbl" id="mode-lbl">LIB</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS — from uploaded app -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-dashboard" onclick="showPage('dashboard');setTab('dashboard')">🏠 Home</button>
+    <button class="tab-btn" id="tab-members" onclick="showPage('members');setTab('members')">👥 Members</button>
+    <button class="tab-btn" id="tab-alarms" onclick="showPage('alarms');setTab('alarms')">🔔 Alerts</button>
+    <button class="tab-btn" id="tab-reports" onclick="showPage('reports');setTab('reports')">📊 Report</button>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD — from uploaded app + dues block -->
+    <!-- <div id="page-dashboard" class="page active">
+      <div id="install-banner" class="show">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round"><path d="M12 2v13m0 0-4-4m4 4 4-4M2 17v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2"/></svg>
+        <div class="install-text">Install AGAM App <span>Tap to add to home screen</span></div>
+        <button class="btn btn-gold btn-sm" onclick="installApp()">Install</button>
+        <button style="background:none;border:none;color:#888;cursor:pointer;font-size:18px;padding:4px;" onclick="document.getElementById('install-banner').classList.remove('show')">×</button>
+      </div> -->
+
+      <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;" id="dash-title">Dashboard</div>
+          <div style="font-size:12px;color:var(--muted);" id="today-date"></div>
+        </div>
+        <div id="sync-dot" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:#fef9c3;color:#854d0e;">🟡 Local</div>
+      </div>
+
+      <div class="stats-row" id="dash-stats">
+        <div class="stat-box s-dark"><div class="stat-lbl">Total</div><div class="stat-val" id="stat-total">0</div></div>
+        <div class="stat-box s-green"><div class="stat-lbl">Active</div><div class="stat-val" id="stat-active">0</div></div>
+        <div class="stat-box s-red"><div class="stat-lbl">Expired</div><div class="stat-val" id="stat-expired">0</div></div>
+        <div class="stat-box s-gold"><div class="stat-lbl">This Month ₹</div><div class="stat-val" id="stat-revenue">0</div></div>
+      </div>
+
+      <!-- DUES BLOCK — new addition for Library -->
+      <div class="dues-bar" id="dues-block">
+        <div>
+          <div class="dues-bar-lbl">Total Dues Pending</div>
+          <div class="dues-bar-amt" id="stat-dues">₹0</div>
+        </div>
+        <div style="text-align:right">
+          <div class="dues-bar-lbl">Members with dues</div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;" id="stat-dues-cnt">0</div>
+        </div>
+      </div>
+
+      <div id="expired-banner" style="display:none;background:#fee2e2;border:1px solid #fca5a5;border-radius:11px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;" class="pulse">⚠️</span>
+        <div>
+          <div style="font-weight:800;color:var(--red);font-size:14px;" id="expired-banner-text"></div>
+          <div style="font-size:12px;color:var(--muted);">Tap 🔔 Alerts to view & renew</div>
+        </div>
+      </div>
+
+      <div class="sec-head">
+        <div class="sec-title" id="recent-title">Recent Members</div>
+        <button class="btn btn-outline btn-sm" onclick="showPage('members');setTab('members')">View All</button>
+      </div>
+      <div id="recent-members"></div>
+    </div>
+
+    <!-- MEMBERS PAGE — from uploaded app + dues chip -->
+    <div id="page-members" class="page">
+      <div class="search-bar">
+        <svg width="15" height="15" fill="none" stroke="var(--muted)" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="member-search" placeholder="Search name, mobile, father..." oninput="renderMembers()">
+      </div>
+      <div class="chips" id="filter-chips">
+        <div class="chip active" id="chip-all" onclick="setFilter('all')">All</div>
+        <div class="chip" id="chip-active" onclick="setFilter('active')">✓ Active</div>
+        <div class="chip" id="chip-expired" onclick="setFilter('expired')">✗ Expired</div>
+        <div class="chip" id="chip-expiring" onclick="setFilter('expiring')">⚠ Expiring</div>
+        <div class="chip" id="chip-dues" onclick="setFilter('dues')">💳 Dues</div>
+      </div>
+      <div id="members-list"></div>
+    </div>
+
+    <!-- ALARMS PAGE — from uploaded app + dues section -->
+    <div id="page-alarms" class="page">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;margin-bottom:4px;">⚠️ Alerts</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px;" id="alarm-last-check"></div>
+
+      <!-- Coaching note -->
+      <div id="coaching-alert-note" style="display:none;background:var(--surface2);border-radius:10px;padding:14px;text-align:center;color:var(--muted);font-size:14px;">
+        🎓 Coaching section has no fee expiry alerts.<br>Switch to 📚 Library mode to see alerts.
+      </div>
+
+      <div id="lib-alerts">
+        <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">💳 Pending Dues</div>
+        <div id="alarm-dues-list"></div>
+        <div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.8px;margin:16px 0 8px;">🔴 Expired Memberships</div>
+        <div id="alarm-expired-list"></div>
+        <div style="font-size:11px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:0.8px;margin:16px 0 8px;">🟡 Expiring in 7 Days</div>
+        <div id="alarm-expiring-list"></div>
+      </div>
+    </div>
+
+    <!-- REPORTS PAGE -->
+    <div id="page-reports" class="page">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;margin-bottom:14px;">📊 Reports</div>
+      <div id="report-content"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fab" onclick="openAdd()">+</button>
+
+<!-- ══ ADD/EDIT MEMBER MODAL — Library format from uploaded app ══ -->
+<div class="overlay" id="modal-member">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <h3 id="modal-title">Add Member</h3>
+      <button class="modal-close" onclick="closeModal('modal-member')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="m-id">
+      <input type="hidden" id="m-mode-field">
+
+      <!-- LIBRARY FIELDS — exact from uploaded app -->
+      <div id="lib-form-fields">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Full Name ✱</label>
+            <input class="form-input" id="m-name" type="text" placeholder="Student name" autocomplete="name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Father's Name ✱</label>
+            <input class="form-input" id="m-father" type="text" placeholder="Father name">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Mobile No. ✱</label>
+            <input class="form-input" id="m-mobile" type="tel" placeholder="10 digits" maxlength="10" autocomplete="tel" inputmode="numeric">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Seat / ID</label>
+            <input class="form-input" id="m-seat" type="text" placeholder="e.g. A-12">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Monthly Fee (₹) ✱</label>
+            <input class="form-input" id="m-fee" type="number" placeholder="e.g. 500" inputmode="numeric">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Admission Fee (₹)</label>
+            <input class="form-input" id="m-admission" type="number" placeholder="0" inputmode="numeric">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Study Time Slot ✱</label>
+          <div class="time-grid" id="time-grid">
+           <div class="time-opt" data-val="6:00–10:00 AM" onclick="pickTime(this)">6–10 AM</div>
+            <div class="time-opt" data-val="10:00 AM–2:00 PM" onclick="pickTime(this)">10–2 PM</div>
+            <div class="time-opt" data-val="2:00–6:00 PM" onclick="pickTime(this)">2–6 PM</div>
+            <div class="time-opt" data-val="6:00–10:00 PM" onclick="pickTime(this)">6–10 PM</div>
+            <!-- <div class="time-opt" data-val="6:00–9:00 PM" onclick="pickTime(this)">6–9 PM</div>
+            <div class="time-opt" data-val="9:00 PM–12:00 AM" onclick="pickTime(this)">9 PM–12 AM</div> -->
+            <div class="time-opt" data-val="Full Day (All Shifts)" onclick="pickTime(this)">Full Day</div>
+            <div class="time-opt" data-val="__custom__" onclick="pickTime(this)">Custom ✏️</div>
+          </div>
+          <input class="form-input" id="m-custom-time" type="text" placeholder="Enter custom time e.g. 7–10 AM" style="margin-top:8px;display:none;">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Date of Payment ✱</label>
+            <input class="form-input" id="m-pay-date" type="date">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Next Due Date ✱</label>
+            <input class="form-input" id="m-next-date" type="date">
+          </div>
+        </div>
+        <!-- DUES SECTION — new addition -->
+        <div class="form-section">
+          <div class="form-section-title">💳 Dues / Pending Amount</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Dues Amount (₹)</label>
+              <input class="form-input" id="m-dues" type="number" placeholder="0" inputmode="numeric">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Dues Since</label>
+              <input class="form-input" id="m-dues-since" type="date">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Dues Reason (Optional)</label>
+            <input class="form-input" id="m-dues-reason" type="text" placeholder="e.g. Partial payment for March">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Remarks / Notes</label>
+          <input class="form-input" id="m-remarks" type="text" placeholder="Optional notes">
+        </div>
+      </div>
+
+      <!-- COACHING FIELDS -->
+      <div id="coa-form-fields" style="display:none;">
+
+        <!-- PHOTOS — coaching -->
+        <div class="form-section">
+          <div class="form-section-title">📸 Photos</div>
+          <div class="pgrid">
+            <div class="pbox" id="cpb-s" onclick="trigCP('s')">
+              <div class="pico">👤</div><div class="plbl">Student Photo</div>
+              <img id="cpi-s" src="" style="display:none">
+              <button class="pdel" onclick="delCP(event,'s')">×</button>
+            </div>
+            <div class="pbox" id="cpb-d" onclick="trigCP('d')">
+              <div class="pico">📄</div><div class="plbl">Document</div>
+              <img id="cpi-d" src="" style="display:none">
+              <button class="pdel" onclick="delCP(event,'d')">×</button>
+            </div>
+            <div class="pbox" id="cpb-f" onclick="trigCP('f')">
+              <div class="pico">📋</div><div class="plbl">Physical Form</div>
+              <img id="cpi-f" src="" style="display:none">
+              <button class="pdel" onclick="delCP(event,'f')">×</button>
+            </div>
+          </div>
+          <input type="file" id="cfi-s" accept="image/*" capture="user" style="display:none" onchange="loadCP('s',this)">
+          <input type="file" id="cfi-d" accept="image/*" capture="user" style="display:none" onchange="loadCP('d',this)">
+          <input type="file" id="cfi-f" accept="image/*" capture="user" style="display:none" onchange="loadCP('f',this)">
+        </div>
+
+                <div class="form-row">
+          <div class="form-group"><label class="form-label">Student Name ✱</label><input class="form-input" id="c-name" type="text" placeholder="Full name"></div>
+          <div class="form-group"><label class="form-label">Date of Birth ✱</label><input class="form-input" id="c-dob" type="date"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Age</label><input class="form-input" id="c-age" type="text" readonly placeholder="Auto-calc"></div>
+          <div class="form-group"><label class="form-label">Date of Admission</label><input class="form-input" id="c-doa" type="date"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Father's Name ✱</label><input class="form-input" id="c-father" type="text" placeholder="Father's name"></div>
+          <div class="form-group"><label class="form-label">Father Qualification</label><input class="form-input" id="c-fqual" type="text" placeholder="e.g. B.A."></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Father Occupation</label><input class="form-input" id="c-focc" type="text" placeholder="e.g. Farmer"></div>
+          <div class="form-group"><label class="form-label">Mother's Name</label><input class="form-input" id="c-mother" type="text" placeholder="Mother's name"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Mother Qualification</label><input class="form-input" id="c-mqual" type="text" placeholder="e.g. 10th Pass"></div>
+          <div class="form-group"><label class="form-label">Mother Occupation</label><input class="form-input" id="c-mocc" type="text" placeholder="e.g. Homemaker"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Mobile 1 (Primary) ✱</label><input class="form-input" id="c-mobile" type="tel" maxlength="10" placeholder="10-digit" inputmode="numeric"></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Mobile 2</label><input class="form-input" id="c-mob2" type="tel" maxlength="10" placeholder="Optional" inputmode="numeric"></div>
+          <div class="form-group"><label class="form-label">Mobile 3</label><input class="form-input" id="c-mob3" type="tel" maxlength="10" placeholder="Optional" inputmode="numeric"></div>
+        </div>
+        <div class="form-row">
+          <!-- CLASS DROPDOWN -->
+          <div class="form-group">
+           <div class="form-group">
+            <label class="form-label">Class</label>
+            <input class="form-input" id="c-class" type="text" placeholder="e.g. Class 9th">
+          </div>
+            <input type="hidden" id="c-class">
+          </div>
+          <div class="form-group"><label class="form-label">School Name</label><input class="form-input" id="c-school" type="text" placeholder="School / College"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Address</label><textarea class="form-input" id="c-address" rows="2" placeholder="Full address"></textarea></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Subject / Batch</label><input class="form-input" id="c-batch" type="text" placeholder="e.g. Maths"></div>
+          <div class="form-group"><label class="form-label">Timing</label><input class="form-input" id="c-timing" type="text" placeholder="e.g. 8–10 AM"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Session</label><input class="form-input" id="c-session" type="text" placeholder="e.g. 2026–27"></div>
+        </div>
+                <!-- CHECKLIST — coaching -->
+        <div class="form-section">
+          <div class="form-section-title">✅ Checklist (Optional)</div>
+          <div class="cbgrid">
+            <div class="cbi" onclick="togCCb(this)"><input type="checkbox" id="cc-ts"><label for="cc-ts">👕 T-Shirt Given</label></div>
+            <div class="cbi" onclick="togCCb(this)"><input type="checkbox" id="cc-bg"><label for="cc-bg">🎒 Bag Given</label></div>
+            <div class="cbi" onclick="togCCb(this)"><input type="checkbox" id="cc-id"><label for="cc-id">🪪 ID Card Given</label></div>
+            <div class="cbi" onclick="togCCb(this)"><input type="checkbox" id="cc-wk"><label for="cc-wk">📩 Offline Updated</label></div>
+            <div class="cbi" onclick="togCCb(this)"><input type="checkbox" id="cc-rl"><label for="cc-rl">📜 Rules Explained</label></div>
+            <div class="cbi" onclick="togCCb(this)"><input type="checkbox" id="cc-fp"><label for="cc-fp">📝 Form Filled</label></div>
+          </div>
+        </div>
+</div>
+
+<!-- <script>
+function selectClass(el, name) {
+  // Reset all options
+  document.querySelectorAll('.cbi').forEach(opt => {
+    opt.style.background = '#f9f9f9';
+    opt.style.borderColor = '#ddd';
+  });
+  // Highlight selected
+  el.style.background = '#dcfce7';
+  el.style.borderColor = '#86efac';
+  // Update header and close
+  document.getElementById('selectedLabel').innerText = name;
+  document.getElementById('classMenu').style.display = 'none';
+}
+</script> -->
+<!-- dropbox add kar raha hu (end) -->
+        </div>
+
+        <!-- CHECKLIST — coaching
+        <div class="form-section">
+          <div class="form-section-title">✅ Checklist (Optional)</div>
+          <div class="cbgrid">
+            <div class="cbi" onclick="togCCb(this)"><input type="checkbox" id="cc-ts"><label for="cc-ts">👕 T-Shirt Given</label></div>
+            <div class="cbi" onclick="togCCb(this)"><input type="checkbox" id="cc-bg"><label for="cc-bg">🎒 Bag Given</label></div>
+            <div class="cbi" onclick="togCCb(this)"><input type="checkbox" id="cc-id"><label for="cc-id">🪪 ID Card Given</label></div>
+            <div class="cbi" onclick="togCCb(this)"><input type="checkbox" id="cc-wk"><label for="cc-wk">📩 Offline Updated</label></div>
+            <div class="cbi" onclick="togCCb(this)"><input type="checkbox" id="cc-rl"><label for="cc-rl">📜 Rules Explained</label></div>
+            <div class="cbi" onclick="togCCb(this)"><input type="checkbox" id="cc-fp"><label for="cc-fp">📝 Form Filled</label></div>
+          </div>
+        </div> -->
+
+        <div class="form-group">
+          <label class="form-label">Remarks</label>
+          <input class="form-input" id="c-remarks" type="text" placeholder="Any notes">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:6px;">
+        <button class="btn btn-outline btn-full" onclick="closeModal('modal-member')">Cancel</button>
+        <button class="btn btn-dark btn-full" onclick="saveMember()">💾 Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ VIEW MEMBER MODAL ══ -->
+<div class="overlay" id="modal-view">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <h3 id="view-name">Details</h3>
+      <button class="modal-close" onclick="closeModal('modal-view')">×</button>
+    </div>
+    <div class="modal-body" id="view-body"></div>
+  </div>
+</div>
+
+<!-- ══ RENEW MODAL — from uploaded app ══ -->
+<div class="overlay" id="modal-renew">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <h3>🔄 Renew Membership</h3>
+      <button class="modal-close" onclick="closeModal('modal-renew')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="renew-id">
+      <div id="renew-member-info" style="background:var(--surface2);border-radius:9px;padding:12px;margin-bottom:14px;font-size:13px;"></div>
+      <div class="form-group">
+        <label class="form-label">Amount Received (₹) ✱</label>
+        <input class="form-input" id="renew-fee" type="number" inputmode="numeric" placeholder="Enter amount">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Payment Date ✱</label>
+          <input class="form-input" id="renew-pay" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Next Due Date ✱</label>
+          <input class="form-input" id="renew-next" type="date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Clear Dues?</label>
+        <select class="form-input" id="renew-clear-dues">
+          <option value="no">No — keep dues balance</option>
+          <option value="yes">Yes — fully cleared</option>
+          <option value="partial">Partially cleared</option>
+        </select>
+      </div>
+      <div class="form-group" id="renew-partial-grp" style="display:none;">
+        <label class="form-label">Amount Cleared (₹)</label>
+        <input class="form-input" id="renew-partial-amt" type="number" inputmode="numeric" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Change Time Slot</label>
+        <select class="form-input" id="renew-time">
+          <option value="">— Keep current slot —</option>
+          <option>6:00–9:00 AM</option><option>9:00 AM–12:00 PM</option><option>12:00–3:00 PM</option>
+          <option>3:00–6:00 PM</option><option>6:00–9:00 PM</option><option>9:00 PM–12:00 AM</option>
+          <option>Full Day (All Shifts)</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-outline btn-full" onclick="closeModal('modal-renew')">Cancel</button>
+        <button class="btn btn-green btn-full" onclick="doRenew()">✓ Confirm Renewal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MARK DUES PAID MODAL — new addition ══ -->
+<div class="overlay" id="modal-dues">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <h3>💳 Collect Due Payment</h3>
+      <button class="modal-close" onclick="closeModal('modal-dues')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="dues-id">
+      <div id="dues-info" style="background:#eff6ff;border:1.5px solid #93c5fd;border-radius:9px;padding:12px;margin-bottom:14px;font-size:13px;"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Amount Collected (₹)</label>
+          <input class="form-input" id="dues-amt" type="number" inputmode="numeric" placeholder="Enter amount">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date of Collection</label>
+          <input class="form-input" id="dues-date" type="date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Note (Optional)</label>
+        <input class="form-input" id="dues-note" type="text" placeholder="e.g. March balance paid">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-outline btn-full" onclick="closeModal('modal-dues')">Cancel</button>
+        <button class="btn btn-blue btn-full" onclick="collectDues()">✓ Mark Collected</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FIREBASE SETUP MODAL ══ -->
+<div class="overlay" id="modal-setup">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <h3>⚡ Setup Supabase Sync</h3>
+      <button class="modal-close" onclick="closeModal('modal-setup')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;">
+        <strong>How it works:</strong> Real-time sync powered by PostgreSQL. Any change on phone instantly appears on laptop. <strong>Open source & Free.</strong>
+      </div>
+
+      <div class="setup-step">
+        <div class="step-title"><span class="step-num">1</span>Create Supabase Project</div>
+        <div class="step-body">
+          • Go to <strong>database.new</strong><br>
+          • Name: AGAM → Set Password → Create Project
+        </div>
+      </div>
+
+      <div class="setup-step">
+        <div class="step-title"><span class="step-num">2</span>Get API Keys</div>
+        <div class="step-body">
+          • Settings (⚙️) → <strong>API</strong><br>
+          • Copy the Project URL and <code>anon</code> public key.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Supabase URL ✱</label>
+        <input class="form-input" id="sb-url" placeholder="https://xyz.supabase.co">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Anon Public Key ✱</label>
+        <input class="form-input" id="sb-key" placeholder="eyJhbGciOiJIUzI1Ni...">
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="btn btn-outline btn-full" onclick="closeModal('modal-setup')">Cancel</button>
+        <button class="btn btn-dark btn-full" onclick="saveSBConfig()">🚀 Connect & Sync</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// SERVICE WORKER
+// ══════════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ══════════════════════════════════════════════════════════
+// OFFLINE
+// ══════════════════════════════════════════════════════════
+window.addEventListener('online', () => { document.getElementById('offline-bar').classList.remove('show'); });
+window.addEventListener('offline', () => { document.getElementById('offline-bar').classList.add('show'); setSyncDot('offline'); });
+if (!navigator.onLine) document.getElementById('offline-bar').classList.add('show');
+
+// ══════════════════════════════════════════════════════════
+// PWA INSTALL — from uploaded app
+// ══════════════════════════════════════════════════════════
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; document.getElementById('install-banner').classList.add('show'); });
+window.addEventListener('appinstalled', () => { document.getElementById('install-banner').classList.remove('show'); toast('✅ AGAM installed!'); deferredPrompt = null; });
+if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) document.getElementById('install-banner').classList.remove('show');
+function installApp() {
+  if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then(() => { deferredPrompt = null; }); }
+  else toast('Tap browser menu → "Add to Home screen"');
+}
+
+// ══════════════════════════════════════════════════════════
+// DATA — all members in one array, mode field separates them
+// ══════════════════════════════════════════════════════════
+const KEY = 'agam_combined_v1';
+const FB_KEY = 'agam_fb_cfg';
+let members = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } })();
+let curMode = 'library'; // 'library' | 'coaching'
+let filterMode = 'all';
+let pickedTime = '';
+let cPhotos = { s: '', d: '', f: '' }; // coaching photos
+
+function saveLocal() { localStorage.setItem(KEY, JSON.stringify(members)); }
+function libMembers() { return members.filter(m => m.mode === 'library'); }
+function coaMembers() { return members.filter(m => m.mode === 'coaching'); }
+function curMembers() { return members.filter(m => m.mode === curMode); }
+
+// ══════════════════════════════════════════════════════════
+// FIREBASE — real-time sync
+// ══════════════════════════════════════════════════════════
+let db = null, fbReady = false, unsub = null;
+
+function loadFBConfig() {
+  try { const c = JSON.parse(localStorage.getItem(FB_KEY)); if (c?.apiKey) initFB(c); } catch {}
+}
+
+function initFB(cfg) {
+  try {
+    try { firebase.app().delete(); } catch {}
+    firebase.initializeApp(cfg);
+    db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+    fbReady = true;
+    if (unsub) unsub();
+    unsub = db.collection('agam_members').onSnapshot(snap => {
+      const cloud = [];
+      snap.forEach(doc => cloud.push({ ...doc.data(), id: doc.id }));
+      members = cloud;
+      saveLocal();
+      renderDashboard(); renderMembers(); renderAlarms();
+      setSyncDot('live');
+      document.getElementById('sync-bar').classList.remove('show');
+    }, () => setSyncDot('offline'));
+    updateSyncBtn();
+    toast('✅ Cloud sync active!');
+  } catch (e) { fbReady = false; toast('❌ Firebase error: ' + e.message); }
+}
+
+async function saveCloud(m) {
+  if (!fbReady || !db) return;
+  try { await db.collection('agam_members').doc(m.id).set(m); } catch {}
+}
+
+async function deleteCloud(id) {
+  if (!fbReady || !db) return;
+  try { await db.collection('agam_members').doc(id).delete(); } catch {}
+}
+
+function saveFBConfig() {
+  const cfg = { apiKey: document.getElementById('fb-key').value.trim(), authDomain: document.getElementById('fb-auth').value.trim(), projectId: document.getElementById('fb-proj').value.trim(), storageBucket: document.getElementById('fb-stor').value.trim(), messagingSenderId: document.getElementById('fb-send').value.trim(), appId: document.getElementById('fb-app').value.trim() };
+  if (!cfg.apiKey || !cfg.projectId) { toast('❌ API Key and Project ID required'); return; }
+  localStorage.setItem(FB_KEY, JSON.stringify(cfg));
+  initFB(cfg); closeModal('modal-setup');
+}
+
+function openSetup() {
+  try { const c = JSON.parse(localStorage.getItem(FB_KEY)); if (c) { document.getElementById('fb-key').value = c.apiKey||''; document.getElementById('fb-auth').value = c.authDomain||''; document.getElementById('fb-proj').value = c.projectId||''; document.getElementById('fb-stor').value = c.storageBucket||''; document.getElementById('fb-send').value = c.messagingSenderId||''; document.getElementById('fb-app').value = c.appId||''; } } catch {}
+  showModal('modal-setup');
+}
+
+function updateSyncBtn() {
+  const btn = document.getElementById('sync-btn');
+  if (fbReady) { btn.classList.add('live'); document.getElementById('sync-txt').textContent = 'Live ✓'; }
+  else { btn.classList.remove('live'); document.getElementById('sync-txt').textContent = 'Sync'; }
+}
+
+function setSyncDot(s) {
+  const d = document.getElementById('sync-dot');
+  if (s==='live') { d.style.background='#dcfce7'; d.style.color='#166534'; d.textContent='🟢 Live'; }
+  else if (s==='offline') { d.style.background='#fee2e2'; d.style.color='#991b1b'; d.textContent='🔴 Offline'; }
+  else { d.style.background='#fef9c3'; d.style.color='#854d0e'; d.textContent='🟡 Local'; }
+}
+
+// ══════════════════════════════════════════════════════════
+// UTILS — from uploaded app (unchanged)
+// ══════════════════════════════════════════════════════════
+const today = () => new Date().toISOString().slice(0, 10);
+
+function daysDiff(d) {
+  if (!d) return -9999;
+  return Math.round((new Date(d) - new Date(today())) / 86400000);
+}
+
+function statusOf(m) {
+  const d = daysDiff(m.nextDate);
+  if (d < 0) return 'expired';
+  if (d <= 7) return 'expiring';
+  return 'active';
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  const [y, mo, da] = d.split('-');
+  return `${da} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo-1]} ${y}`;
+}
+
+function nextMonth(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  dt.setMonth(dt.getMonth() + 1);
+  return dt.toISOString().slice(0, 10);
+}
+
+function calcAge(dob) {
+  if (!dob) return '—';
+  const b = new Date(dob), t = new Date();
+  let a = t.getFullYear()-b.getFullYear();
+  const m = t.getMonth()-b.getMonth();
+  if (m<0||(m===0&&t.getDate()<b.getDate())) a--;
+  return a + ' yrs';
+}
+
+function toast(msg, dur = 2800) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.style.opacity = '1'; el.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(window._t);
+  window._t = setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(-50%) translateY(20px)'; }, dur);
+}
+
+// ══════════════════════════════════════════════════════════
+// MODE TOGGLE — top right corner
+// ══════════════════════════════════════════════════════════
+function toggleMode() {
+  curMode = curMode === 'library' ? 'coaching' : 'library';
+  const isLib = curMode === 'library';
+  const btn = document.getElementById('mode-toggle-btn');
+  btn.classList.toggle('coaching', !isLib);
+  document.getElementById('hdr-sub').textContent = isLib ? 'Self Study Library' : 'Coaching Centre';
+  document.getElementById('mode-lbl').textContent = isLib ? 'LIB' : 'COA';
+  document.getElementById('splash-sub').textContent = isLib ? 'Self Study Library' : 'Coaching Centre';
+  document.getElementById('dash-title').textContent = isLib ? 'Dashboard' : '🎓 Coaching Dashboard';
+  document.getElementById('recent-title').textContent = isLib ? 'Recent Members' : 'Recent Students';
+
+  // Show/hide Library-only UI elements
+  document.getElementById('dues-block').style.display = isLib ? 'flex' : 'none';
+  document.getElementById('chip-dues').style.display = isLib ? '' : 'none';
+  document.getElementById('chip-expiring').style.display = isLib ? '' : 'none';
+  document.getElementById('chip-expired').style.display = isLib ? '' : 'none';
+  document.getElementById('coaching-alert-note').style.display = isLib ? 'none' : 'block';
+  document.getElementById('lib-alerts').style.display = isLib ? 'block' : 'none';
+
+  // Coaching has different stat labels
+  const labels = document.querySelectorAll('#dash-stats .stat-lbl');
+  if (isLib) {
+    labels[1].textContent = 'Active'; labels[2].textContent = 'Expired'; labels[3].textContent = 'This Month ₹';
+  } else {
+    labels[1].textContent = 'Students'; labels[2].textContent = 'Batches'; labels[3].textContent = 'Classes';
+  }
+
+  filterMode = 'all';
+  setFilter('all');
+  renderDashboard();
+  renderMembers();
+}
+
+// ══════════════════════════════════════════════════════════
+// NAVIGATION — from uploaded app
+// ══════════════════════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('fab').style.display = ['dashboard','members'].includes(name) ? 'flex' : 'none';
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'members') renderMembers();
+  if (name === 'alarms') renderAlarms();
+  if (name === 'reports') renderReports();
+}
+
+function setTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════
+// DASHBOARD — from uploaded app + dues
+// ══════════════════════════════════════════════════════════
+function renderDashboard() {
+  document.getElementById('today-date').textContent =
+    new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  const isLib = curMode === 'library';
+  const sec = curMembers();
+  const mon = today().slice(0,7);
+
+  if (isLib) {
+    const active = sec.filter(m => statusOf(m) === 'active').length;
+    const expiring = sec.filter(m => statusOf(m) === 'expiring').length;
+    const expired = sec.filter(m => statusOf(m) === 'expired').length;
+    const rev = sec.filter(m => (m.payDate||'').startsWith(mon)).reduce((s,m) => s+(+m.fee||0), 0);
+    const duesTotal = sec.filter(m => +m.dues > 0).reduce((s,m) => s+(+m.dues), 0);
+    const duesCnt = sec.filter(m => +m.dues > 0).length;
+
+    document.getElementById('stat-total').textContent = sec.length;
+    document.getElementById('stat-active').textContent = active + expiring;
+    document.getElementById('stat-expired').textContent = expired;
+    document.getElementById('stat-revenue').textContent = rev.toLocaleString('en-IN');
+    document.getElementById('stat-dues').textContent = '₹' + duesTotal.toLocaleString('en-IN');
+    document.getElementById('stat-dues-cnt').textContent = duesCnt;
+
+    updateBadge();
+    const banner = document.getElementById('expired-banner');
+    const msgs = [];
+    if (expired) msgs.push(`${expired} expired`);
+    if (expiring) msgs.push(`${expiring} expiring soon`);
+    if (duesCnt) msgs.push(`${duesCnt} with dues`);
+    if (msgs.length) { banner.style.display='flex'; document.getElementById('expired-banner-text').textContent = msgs.join(' · ') + ' — action needed!'; }
+    else banner.style.display = 'none';
+  } else {
+    document.getElementById('stat-total').textContent = sec.length;
+    document.getElementById('stat-active').textContent = sec.length;
+    document.getElementById('stat-expired').textContent = new Set(sec.map(m=>m.batch).filter(Boolean)).size;
+    document.getElementById('stat-revenue').textContent = new Set(sec.map(m=>m.class).filter(Boolean)).size;
+    document.getElementById('expired-banner').style.display = 'none';
+  }
+
+  setSyncDot(fbReady && navigator.onLine ? 'live' : !navigator.onLine ? 'offline' : 'local');
+
+  const recent = [...sec].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,5);
+  document.getElementById('recent-members').innerHTML = recent.length
+    ? recent.map(m => cardHTML(m, true)).join('')
+    : `<div class="empty-state"><div class="empty-icon">${isLib?'📚':'🎓'}</div><div class="empty-text">No ${isLib?'members':'students'} yet.<br>Tap + to add.</div></div>`;
+}
+
+function updateBadge() {
+  const lib = libMembers();
+  const n = lib.filter(m => statusOf(m) !== 'active' || +m.dues > 0).length;
+  const b = document.getElementById('bell-badge');
+  b.style.display = n ? 'flex' : 'none';
+  b.textContent = n;
+}
+
+// ══════════════════════════════════════════════════════════
+// CARD HTML — Library: exact from uploaded app + dues button
+//             Coaching: simple card
+// ══════════════════════════════════════════════════════════
+function cardHTML(m, compact = false) {
+  if (m.mode === 'coaching') return coachingCardHTML(m, compact);
+
+  // LIBRARY CARD — from uploaded app format + dues badge + collect button
+  const st = statusOf(m);
+  const diff = daysDiff(m.nextDate);
+  const hasDues = +m.dues > 0;
+  const badge = st === 'active'
+    ? `<span class="badge badge-active">Active</span>`
+    : st === 'expiring'
+    ? `<span class="badge badge-expiring">Expiring</span>`
+    : `<span class="badge badge-expired pulse">Expired</span>`;
+  const duesBadge = hasDues ? `<span class="badge badge-dues">₹${(+m.dues).toLocaleString('en-IN')} due</span>` : '';
+  const dueColor = diff < 0 ? 'var(--red)' : diff <= 7 ? 'var(--orange)' : 'var(--green)';
+  const dueText = diff < 0 ? `Expired ${Math.abs(diff)}d ago` : diff === 0 ? 'Expires TODAY' : `${diff} days left`;
+  const cardClass = st === 'expired' ? 'expired' : st === 'expiring' ? 'expiring' : hasDues ? 'has-dues' : 'active-m';
+
+  return `<div class="member-card ${cardClass}" onclick="viewMember('${m.id}')">
+    <div class="mc-top">
+      <div><div class="mc-name">${m.name}</div><div class="mc-father">S/o ${m.father}</div></div>
+      <div class="mc-badges">${badge}${duesBadge}</div>
+    </div>
+    <div class="mc-grid">
+      <div class="mc-info">Mobile<span>${m.mobile}</span></div>
+      <div class="mc-info">Monthly Fee<span>₹${(+m.fee||0).toLocaleString('en-IN')}</span></div>
+      <div class="mc-info">Time Slot<span>${m.time||'—'}</span></div>
+      <div class="mc-info">Next Due<span style="color:${dueColor};">${fmtDate(m.nextDate)}<br><span style="font-size:11px;font-weight:600;">${dueText}</span></span></div>
+    </div>
+    ${!compact ? `<div class="mc-actions" onclick="event.stopPropagation()">
+      <button class="btn btn-green btn-sm" onclick="openRenew('${m.id}')">🔄 Renew</button>
+      ${hasDues ? `<button class="btn btn-blue btn-sm" onclick="openDuesCollect('${m.id}')">💳 Collect ₹${(+m.dues).toLocaleString('en-IN')}</button>` : ''}
+      <button class="btn btn-outline btn-sm" onclick="openEdit('${m.id}')">✏️ Edit</button>
+      <button class="btn btn-red btn-sm" onclick="delMember('${m.id}')">🗑</button>
+    </div>` : ''}
+  </div>`;
+}
+
+function coachingCardHTML(m, compact = false) {
+  return `<div class="coaching-card" onclick="viewMember('${m.id}')">
+    <div class="mc-top">
+      <div><div class="mc-name">${m.name}</div><div class="mc-father">S/o ${m.father||'—'}${m.batch?' · '+m.batch:''}</div></div>
+    </div>
+    <div class="mc-grid">
+      <div class="mc-info">Mobile<span>${m.mobile}</span></div>
+      <div class="mc-info">Class<span>${m.class||'—'}</span></div>
+      <div class="mc-info">Date of Birth<span>${fmtDate(m.dob)}</span></div>
+      <div class="mc-info">Timing<span>${m.timing||'—'}</span></div>
+    </div>
+    ${!compact ? `<div class="mc-actions" onclick="event.stopPropagation()">
+      <button class="btn btn-outline btn-sm" onclick="openEdit('${m.id}')">✏️ Edit</button>
+      <button class="btn btn-red btn-sm" onclick="delMember('${m.id}')">🗑</button>
+    </div>` : ''}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// FILTER — from uploaded app + dues
+// ══════════════════════════════════════════════════════════
+function setFilter(f) {
+  filterMode = f;
+  ['all','active','expired','expiring','dues'].forEach(x => {
+    const el = document.getElementById('chip-'+x);
+    if (el) el.className = 'chip' + (x===f?' active':'');
+  });
+  renderMembers();
+}
+
+function renderMembers() {
+  const q = (document.getElementById('member-search').value||'').toLowerCase();
+  const isLib = curMode === 'library';
+  let list = curMembers().filter(m => {
+    const searchFields = isLib
+      ? [m.name, m.mobile, m.father, m.seat].filter(Boolean).join(' ').toLowerCase()
+      : [m.name, m.mobile, m.father, m.batch, m.class, m.school].filter(Boolean).join(' ').toLowerCase();
+    const matchQ = !q || searchFields.includes(q);
+    const st = isLib ? statusOf(m) : 'active';
+    const matchF = filterMode==='all' || filterMode===st || (filterMode==='dues' && +m.dues>0);
+    return matchQ && matchF;
+  });
+  if (isLib) list = list.sort((a,b) => daysDiff(a.nextDate) - daysDiff(b.nextDate));
+  else list = list.sort((a,b) => a.name.localeCompare(b.name));
+  document.getElementById('members-list').innerHTML = list.length
+    ? list.map(m => cardHTML(m)).join('')
+    : `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">No members found.</div></div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// VIEW MEMBER — from uploaded app + dues info
+// ══════════════════════════════════════════════════════════
+function viewMember(id) {
+  const m = members.find(x=>x.id===id); if (!m) return;
+  const isLib = m.mode === 'library';
+  document.getElementById('view-name').textContent = m.name;
+
+  if (isLib) {
+    const diff = daysDiff(m.nextDate);
+    const dueColor = diff < 0 ? 'var(--red)' : diff <= 7 ? 'var(--orange)' : 'var(--green)';
+    const hist = [...(m.history||[])].reverse().slice(0,6);
+    const totalPaid = (m.history||[]).reduce((s,h)=>s+(+h.fee||0),0) + (+m.fee||0);
+    const duesHist = [...(m.duesHistory||[])].reverse().slice(0,4);
+
+    document.getElementById('view-body').innerHTML = `
+      <div class="detail-section">
+        <div class="detail-row"><span class="lbl">Full Name</span><span class="val">${m.name}</span></div>
+        <div class="detail-row"><span class="lbl">Father's Name</span><span class="val">${m.father}</span></div>
+        <div class="detail-row"><span class="lbl">Mobile</span><span class="val"><a href="tel:${m.mobile}" style="color:var(--green);text-decoration:none;">📞 ${m.mobile}</a></span></div>
+        <div class="detail-row"><span class="lbl">Seat / ID</span><span class="val">${m.seat||'—'}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-row"><span class="lbl">Monthly Fee</span><span class="val">₹${(+m.fee||0).toLocaleString('en-IN')}</span></div>
+        <div class="detail-row"><span class="lbl">Admission Fee</span><span class="val">₹${(+m.admission||0).toLocaleString('en-IN')}</span></div>
+        <div class="detail-row"><span class="lbl">Total Paid</span><span class="val" style="color:var(--green);">₹${totalPaid.toLocaleString('en-IN')}</span></div>
+        <div class="detail-row"><span class="lbl">Time Slot</span><span class="val">${m.time||'—'}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-row"><span class="lbl">Date of Payment</span><span class="val">${fmtDate(m.payDate)}</span></div>
+        <div class="detail-row"><span class="lbl">Next Due Date</span><span class="val" style="color:${dueColor};">${fmtDate(m.nextDate)}</span></div>
+        <div class="detail-row"><span class="lbl">Status</span><span class="val" style="color:${dueColor};">${statusOf(m).toUpperCase()} (${diff<0?Math.abs(diff)+'d overdue':diff+'d left'})</span></div>
+        ${m.remarks?`<div class="detail-row"><span class="lbl">Remarks</span><span class="val">${m.remarks}</span></div>`:''}
+      </div>
+      <!-- DUES SECTION -->
+      ${+m.dues > 0 ? `
+      <div class="detail-section" style="background:#eff6ff;border:1.5px solid #93c5fd;">
+        <div class="detail-row"><span class="lbl" style="color:var(--blue);">💳 Pending Dues</span><span class="val" style="color:var(--blue);font-size:18px;">₹${(+m.dues).toLocaleString('en-IN')}</span></div>
+        ${m.duesSince?`<div class="detail-row"><span class="lbl">Dues Since</span><span class="val">${fmtDate(m.duesSince)}</span></div>`:''}
+        ${m.duesReason?`<div class="detail-row"><span class="lbl">Reason</span><span class="val">${m.duesReason}</span></div>`:''}
+      </div>` : ''}
+      ${hist.length ? `
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Payment History</div>
+      <div class="detail-section" style="padding:10px 14px;">
+        ${hist.map(h=>`<div class="detail-row" style="font-size:12px;"><span class="lbl">${fmtDate(h.payDate)}</span><span style="color:var(--muted);">${h.time||m.time||'—'}</span><span class="val" style="color:var(--green);">₹${(+h.fee||0).toLocaleString('en-IN')} ✓</span></div>`).join('')}
+      </div>` : ''}
+      ${duesHist.length ? `
+      <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Dues Collection History</div>
+      <div class="detail-section" style="padding:10px 14px;background:#eff6ff;">
+        ${duesHist.map(h=>`<div class="detail-row" style="font-size:12px;"><span class="lbl">${fmtDate(h.date)}</span><span style="color:var(--muted);">${h.note||'—'}</span><span class="val" style="color:var(--blue);">₹${(+h.amt||0).toLocaleString('en-IN')} ✓</span></div>`).join('')}
+      </div>` : ''}
+      <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">
+        <button class="btn btn-green" style="flex:2;" onclick="closeModal('modal-view');openRenew('${id}')">🔄 Renew</button>
+        ${+m.dues>0?`<button class="btn btn-blue btn-sm" onclick="closeModal('modal-view');openDuesCollect('${id}')">💳 Collect Dues</button>`:''}
+        <button class="btn btn-outline btn-sm" onclick="closeModal('modal-view');openEdit('${id}')">✏️</button>
+        <button class="btn btn-red btn-sm" onclick="closeModal('modal-view');delMember('${id}')">🗑</button>
+      </div>`;
+  } else {
+    // Coaching view
+    const cch = m.checks || {};
+    const hasPhotos = m.cps || m.cpd || m.cpf;
+    const hasChecks = Object.values(cch).some(v => v);
+    document.getElementById('view-body').innerHTML = `
+      ${hasPhotos ? `<div class="detail-section">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">📸 Photos</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+          <div style="aspect-ratio:3/4;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);text-align:center;padding:4px;">
+            ${m.cps?`<img src="${m.cps}" style="width:100%;height:100%;object-fit:cover;">`:'No photo'}</div>
+          <div style="aspect-ratio:3/4;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);text-align:center;padding:4px;">
+            ${m.cpd?`<img src="${m.cpd}" style="width:100%;height:100%;object-fit:cover;">`:'No document'}</div>
+          <div style="aspect-ratio:3/4;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);text-align:center;padding:4px;">
+            ${m.cpf?`<img src="${m.cpf}" style="width:100%;height:100%;object-fit:cover;">`:'No form'}</div>
+        </div>
+      </div>` : ''}
+      <div class="detail-section">
+        <div class="detail-row"><span class="lbl">Name</span><span class="val">${m.name}</span></div>
+        <div class="detail-row"><span class="lbl">Date of Birth</span><span class="val">${fmtDate(m.dob)}</span></div>
+        <div class="detail-row"><span class="lbl">Age</span><span class="val">${calcAge(m.dob)}</span></div>
+        <div class="detail-row"><span class="lbl">Admission Date</span><span class="val">${fmtDate(m.doa)}</span></div>
+        <div class="detail-row"><span class="lbl">Class</span><span class="val">${m.class||'—'}</span></div>
+        <div class="detail-row"><span class="lbl">School</span><span class="val">${m.school||'—'}</span></div>
+        <div class="detail-row"><span class="lbl">Address</span><span class="val">${m.address||'—'}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-row"><span class="lbl">Father</span><span class="val">${m.father||'—'}</span></div>
+        <div class="detail-row"><span class="lbl">Father Qual.</span><span class="val">${m.fqual||'—'}</span></div>
+        <div class="detail-row"><span class="lbl">Father Occ.</span><span class="val">${m.focc||'—'}</span></div>
+        <div class="detail-row"><span class="lbl">Mother</span><span class="val">${m.mother||'—'}</span></div>
+        <div class="detail-row"><span class="lbl">Mother Qual.</span><span class="val">${m.mqual||'—'}</span></div>
+        <div class="detail-row"><span class="lbl">Mother Occ.</span><span class="val">${m.mocc||'—'}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-row"><span class="lbl">Mobile 1</span><span class="val"><a href="tel:${m.mobile}" style="color:var(--green);text-decoration:none;">📞 ${m.mobile}</a></span></div>
+        ${m.mob2?`<div class="detail-row"><span class="lbl">Mobile 2</span><span class="val"><a href="tel:${m.mob2}" style="color:var(--green);text-decoration:none;">📞 ${m.mob2}</a></span></div>`:''}
+        ${m.mob3?`<div class="detail-row"><span class="lbl">Mobile 3</span><span class="val"><a href="tel:${m.mob3}" style="color:var(--green);text-decoration:none;">📞 ${m.mob3}</a></span></div>`:''}
+        <div class="detail-row"><span class="lbl">Batch / Subject</span><span class="val">${m.batch||'—'}</span></div>
+        <div class="detail-row"><span class="lbl">Timing</span><span class="val">${m.timing||'—'}</span></div>
+        ${m.remarks?`<div class="detail-row"><span class="lbl">Remarks</span><span class="val">${m.remarks}</span></div>`:''}
+      </div>
+      ${hasChecks ? `<div class="detail-section">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">✅ Checklist</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${cch.ts?'<span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">👕 T-Shirt</span>':''}
+          ${cch.bg?'<span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">🎒 Bag</span>':''}
+          ${cch.id?'<span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">🪪 ID Card</span>':''}
+          ${cch.wk?'<span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">📩 Welcome Kit</span>':''}
+          ${cch.rl?'<span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">📜 Rules</span>':''}
+          ${cch.fp?'<span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">📝 Form Filled</span>':''}
+        </div>
+      </div>` : ''}
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button class="btn btn-dark" style="flex:1;" onclick="closeModal('modal-view');openEdit('${id}')">✏️ Edit</button>
+        <button class="btn btn-red btn-sm" onclick="closeModal('modal-view');delMember('${id}')">🗑</button>
+      </div>`;
+  }
+  showModal('modal-view');
+}
+
+// ══════════════════════════════════════════════════════════
+// ADD / EDIT — shows Library or Coaching form
+// ══════════════════════════════════════════════════════════
+function openAdd() {
+  document.getElementById('m-id').value = '';
+  document.getElementById('m-mode-field').value = curMode;
+  document.getElementById('modal-title').textContent = curMode==='library' ? 'Add Member' : 'Add Student';
+  resetLibForm();
+  resetCoaForm();
+  document.getElementById('lib-form-fields').style.display = curMode==='library' ? 'block' : 'none';
+  document.getElementById('coa-form-fields').style.display = curMode==='coaching' ? 'block' : 'none';
+  showModal('modal-member');
+}
+
+function resetLibForm() {
+  ['m-name','m-father','m-mobile','m-seat','m-fee','m-admission','m-dues','m-dues-reason','m-remarks','m-custom-time'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('m-dues-since').value='';
+  document.querySelectorAll('.time-opt').forEach(o=>o.classList.remove('selected'));
+  document.getElementById('m-custom-time').style.display='none';
+  document.getElementById('m-pay-date').value = today();
+  document.getElementById('m-next-date').value = nextMonth(today());
+  pickedTime = '';
+}
+
+// ══════════════════════════════════════════════════════════
+// COACHING PHOTO HELPERS
+// ══════════════════════════════════════════════════════════
+function trigCP(t) { document.getElementById('cfi-' + t).click(); }
+function loadCP(t, inp) {
+  if (!inp.files[0]) return;
+  const r = new FileReader();
+  r.onload = e => { cPhotos[t] = e.target.result; setCoachingPhoto(t, e.target.result); };
+  r.readAsDataURL(inp.files[0]); inp.value = '';
+}
+function setCoachingPhoto(t, src) {
+  const box = document.getElementById('cpb-' + t);
+  const img = document.getElementById('cpi-' + t);
+  if (!box || !img) return;
+  if (src) {
+    img.src = src; img.style.display = 'block'; box.classList.add('has');
+  } else {
+    img.src = ''; img.style.display = 'none'; box.classList.remove('has');
+  }
+}
+function delCP(e, t) { e.stopPropagation(); cPhotos[t] = ''; setCoachingPhoto(t, ''); }
+function resetCoachingPhotos() { ['s','d','f'].forEach(t => setCoachingPhoto(t, '')); cPhotos = {s:'',d:'',f:''}; }
+
+// Coaching checklist toggle
+function togCCb(el) {
+  const inp = el.querySelector('input');
+  inp.checked = !inp.checked;
+  el.classList.toggle('on', inp.checked);
+}
+
+function resetCoaForm() {
+  ['c-name','c-dob','c-doa','c-father','c-fqual','c-focc','c-mother','c-mqual','c-mocc','c-mobile','c-mob2','c-mob3','c-class','c-school','c-address','c-batch','c-timing','c-remarks'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('c-age').value='';
+  resetCoachingPhotos();
+  // reset coaching checkboxes
+  ['cc-ts','cc-bg','cc-id','cc-wk','cc-rl','cc-fp'].forEach(id => { const el=document.getElementById(id); if(!el) return; el.checked=false; const row=el.closest('.cbi'); if(row) row.classList.remove('on'); });
+}
+
+function openEdit(id) {
+  const m = members.find(x=>x.id===id); if (!m) return;
+  document.getElementById('m-id').value = id;
+  document.getElementById('m-mode-field').value = m.mode;
+  document.getElementById('modal-title').textContent = m.mode==='library' ? 'Edit Member' : 'Edit Student';
+  document.getElementById('lib-form-fields').style.display = m.mode==='library' ? 'block' : 'none';
+  document.getElementById('coa-form-fields').style.display = m.mode==='coaching' ? 'block' : 'none';
+
+  if (m.mode === 'library') {
+    document.getElementById('m-name').value = m.name||'';
+    document.getElementById('m-father').value = m.father||'';
+    document.getElementById('m-mobile').value = m.mobile||'';
+    document.getElementById('m-seat').value = m.seat||'';
+    document.getElementById('m-fee').value = m.fee||'';
+    document.getElementById('m-admission').value = m.admission||'';
+    document.getElementById('m-pay-date').value = m.payDate||today();
+    document.getElementById('m-next-date').value = m.nextDate||'';
+    document.getElementById('m-dues').value = m.dues||'';
+    document.getElementById('m-dues-since').value = m.duesSince||'';
+    document.getElementById('m-dues-reason').value = m.duesReason||'';
+    document.getElementById('m-remarks').value = m.remarks||'';
+    pickedTime = m.time||'';
+    document.querySelectorAll('.time-opt').forEach(o=>{
+      const isCustom = !['6:00–9:00 AM','9:00 AM–12:00 PM','12:00–3:00 PM','3:00–6:00 PM','6:00–9:00 PM','9:00 PM–12:00 AM','Full Day (All Shifts)'].includes(m.time);
+      if (o.dataset.val===m.time) o.classList.add('selected');
+      if (o.dataset.val==='__custom__' && isCustom) { o.classList.add('selected'); document.getElementById('m-custom-time').style.display='block'; document.getElementById('m-custom-time').value=m.time||''; }
+    });
+  } else {
+    const set = (i,v) => { const el=document.getElementById(i); if(el) el.value=v||''; };
+    set('c-name',m.name); set('c-dob',m.dob); set('c-doa',m.doa);
+    set('c-father',m.father); set('c-fqual',m.fqual); set('c-focc',m.focc);
+    set('c-mother',m.mother); set('c-mqual',m.mqual); set('c-mocc',m.mocc);
+    set('c-mobile',m.mobile); set('c-mob2',m.mob2); set('c-mob3',m.mob3);
+    set('c-class',m.class); set('c-school',m.school); set('c-address',m.address);
+    set('c-batch',m.batch); set('c-timing',m.timing); set('c-remarks',m.remarks);
+    document.getElementById('c-age').value = m.dob ? calcAge(m.dob) : '';
+    // restore photos
+    cPhotos = { s: m.cps||'', d: m.cpd||'', f: m.cpf||'' };
+    setCoachingPhoto('s', m.cps); setCoachingPhoto('d', m.cpd); setCoachingPhoto('f', m.cpf);
+    // restore checkboxes
+    const cch = m.checks || {};
+    [['cc-ts','ts'],['cc-bg','bg'],['cc-id','id'],['cc-wk','wk'],['cc-rl','rl'],['cc-fp','fp']].forEach(([eid,key]) => {
+      const el = document.getElementById(eid); if(!el) return;
+      el.checked = !!cch[key];
+      const row = el.closest('.cbi');
+      if(row) row.classList.toggle('on', !!cch[key]);
+    });
+  }
+  showModal('modal-member');
+}
+
+function pickTime(el) {
+  document.querySelectorAll('.time-opt').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+  pickedTime = el.dataset.val;
+  const ci = document.getElementById('m-custom-time');
+  if (pickedTime==='__custom__') { ci.style.display='block'; ci.focus(); } else ci.style.display='none';
+}
+
+document.getElementById('m-pay-date').addEventListener('change', function(){ if(this.value) document.getElementById('m-next-date').value=nextMonth(this.value); });
+document.getElementById('c-dob').addEventListener('change', function(){ document.getElementById('c-age').value = this.value ? calcAge(this.value) : ''; });
+document.getElementById('renew-clear-dues').addEventListener('change', function(){ document.getElementById('renew-partial-grp').style.display = this.value==='partial'?'block':'none'; });
+
+async function saveMember() {
+  const mode = document.getElementById('m-mode-field').value;
+  let data = {};
+
+  if (mode === 'library') {
+    const name = document.getElementById('m-name').value.trim();
+    const father = document.getElementById('m-father').value.trim();
+    const mobile = document.getElementById('m-mobile').value.trim();
+    const fee = document.getElementById('m-fee').value;
+    const payDate = document.getElementById('m-pay-date').value;
+    const nextDate = document.getElementById('m-next-date').value;
+    let time = pickedTime==='__custom__' ? document.getElementById('m-custom-time').value.trim() : pickedTime;
+    if (!name) { toast('❌ Enter full name'); return; }
+    if (!father) { toast("❌ Enter father's name"); return; }
+    if (!mobile||mobile.length<10) { toast('❌ Enter valid 10-digit mobile'); return; }
+    if (!fee) { toast('❌ Enter monthly fee'); return; }
+    if (!time) { toast('❌ Select a time slot'); return; }
+    if (!payDate) { toast('❌ Enter date of payment'); return; }
+    if (!nextDate) { toast('❌ Enter next due date'); return; }
+    data = { mode, name, father, mobile, fee:+fee, time, payDate, nextDate,
+      seat: document.getElementById('m-seat').value.trim(),
+      admission: +(document.getElementById('m-admission').value)||0,
+      dues: +(document.getElementById('m-dues').value)||0,
+      duesSince: document.getElementById('m-dues-since').value,
+      duesReason: document.getElementById('m-dues-reason').value.trim(),
+      remarks: document.getElementById('m-remarks').value.trim() };
+  } else {
+    const name = document.getElementById('c-name').value.trim();
+    const father = document.getElementById('c-father').value.trim();
+    const mobile = document.getElementById('c-mobile').value.trim();
+    const dob = document.getElementById('c-dob').value;
+    if (!name) { toast('❌ Enter student name'); return; }
+    if (!dob) { toast('❌ Enter date of birth'); return; }
+    if (!father) { toast("❌ Enter father's name"); return; }
+    if (!mobile||mobile.length<10) { toast('❌ Enter valid 10-digit mobile'); return; }
+    data = { mode, name, dob, father, mobile,
+      doa: document.getElementById('c-doa').value,
+      fqual: document.getElementById('c-fqual').value, focc: document.getElementById('c-focc').value,
+      mother: document.getElementById('c-mother').value, mqual: document.getElementById('c-mqual').value, mocc: document.getElementById('c-mocc').value,
+      mob2: document.getElementById('c-mob2').value, mob3: document.getElementById('c-mob3').value,
+      class: document.getElementById('c-class').value, school: document.getElementById('c-school').value, address: document.getElementById('c-address').value,
+      batch: document.getElementById('c-batch').value, timing: document.getElementById('c-timing').value,
+      remarks: document.getElementById('c-remarks').value,
+      cps: cPhotos.s, cpd: cPhotos.d, cpf: cPhotos.f,
+      checks: {
+        ts: document.getElementById('cc-ts').checked,
+        bg: document.getElementById('cc-bg').checked,
+        id: document.getElementById('cc-id').checked,
+        wk: document.getElementById('cc-wk').checked,
+        rl: document.getElementById('cc-rl').checked,
+        fp: document.getElementById('cc-fp').checked,
+      } };
+  }
+
+  const editId = document.getElementById('m-id').value;
+  if (editId) {
+    const idx = members.findIndex(x=>x.id===editId);
+    if (idx>-1) members[idx]={...members[idx],...data,updatedAt:Date.now()};
+    saveLocal(); await saveCloud(members[members.findIndex(x=>x.id===editId)]);
+    toast('✅ Saved' + (fbReady?' & synced':''));
+  } else {
+    const nm = { id:'mb_'+Date.now(), ...data, history:[], duesHistory:[], createdAt:Date.now() };
+    members.unshift(nm); saveLocal(); await saveCloud(nm);
+    toast('✅ Added' + (fbReady?' & synced':''));
+  }
+  closeModal('modal-member'); renderDashboard(); renderMembers();
+}
+
+// ══════════════════════════════════════════════════════════
+// RENEW — from uploaded app + clear dues option
+// ══════════════════════════════════════════════════════════
+function openRenew(id) {
+  const m = members.find(x=>x.id===id); if (!m) return;
+  document.getElementById('renew-id').value = id;
+  document.getElementById('renew-fee').value = m.fee||'';
+  document.getElementById('renew-pay').value = today();
+  document.getElementById('renew-next').value = nextMonth(today());
+  document.getElementById('renew-time').value = '';
+  document.getElementById('renew-clear-dues').value = 'no';
+  document.getElementById('renew-partial-grp').style.display = 'none';
+  document.getElementById('renew-member-info').innerHTML =
+    `<strong>${m.name}</strong> · S/o ${m.father}<br>
+     <span style="color:var(--muted);">Current slot: ${m.time||'—'} · Fee: ₹${(+m.fee||0).toLocaleString('en-IN')}${+m.dues>0?` · <span style="color:var(--blue);">Dues: ₹${(+m.dues).toLocaleString('en-IN')}</span>`:''}</span>`;
+  showModal('modal-renew');
+}
+
+async function doRenew() {
+  const id = document.getElementById('renew-id').value;
+  const fee = document.getElementById('renew-fee').value;
+  const payDate = document.getElementById('renew-pay').value;
+  const nextDate = document.getElementById('renew-next').value;
+  const newTime = document.getElementById('renew-time').value;
+  const clearDues = document.getElementById('renew-clear-dues').value;
+  if (!fee||!payDate||!nextDate) { toast('❌ Fill all required fields'); return; }
+
+  const m = members.find(x=>x.id===id); if (!m) return;
+  if (!m.history) m.history=[];
+  m.history.push({ payDate:m.payDate, nextDate:m.nextDate, fee:m.fee, time:m.time, renewedAt:Date.now() });
+  m.fee=+fee; m.payDate=payDate; m.nextDate=nextDate;
+  if (newTime) m.time=newTime;
+  if (clearDues==='yes') m.dues=0;
+  else if (clearDues==='partial') { const c=+(document.getElementById('renew-partial-amt').value)||0; m.dues=Math.max(0,(+m.dues)-c); }
+
+  saveLocal(); await saveCloud(m);
+  closeModal('modal-renew'); renderDashboard(); renderMembers(); renderAlarms();
+  toast('🎉 Renewed' + (fbReady?' & synced':''));
+}
+
+// ══════════════════════════════════════════════════════════
+// COLLECT DUES — new addition
+// ══════════════════════════════════════════════════════════
+function openDuesCollect(id) {
+  const m = members.find(x=>x.id===id); if (!m) return;
+  document.getElementById('dues-id').value = id;
+  document.getElementById('dues-amt').value = m.dues||'';
+  document.getElementById('dues-date').value = today();
+  document.getElementById('dues-note').value = '';
+  document.getElementById('dues-info').innerHTML =
+    `<strong>${m.name}</strong> · S/o ${m.father}<br>
+     <span style="color:var(--blue);font-weight:700;">Pending dues: ₹${(+m.dues).toLocaleString('en-IN')}</span>${m.duesSince?`<br><span style="color:var(--muted);font-size:12px;">Since: ${fmtDate(m.duesSince)}</span>`:''}`;
+  showModal('modal-dues');
+}
+
+async function collectDues() {
+  const id = document.getElementById('dues-id').value;
+  const amt = +(document.getElementById('dues-amt').value)||0;
+  const date = document.getElementById('dues-date').value;
+  const note = document.getElementById('dues-note').value.trim();
+  if (!amt||!date) { toast('❌ Enter amount and date'); return; }
+
+  const m = members.find(x=>x.id===id); if (!m) return;
+  m.dues = Math.max(0, (+m.dues) - amt);
+  if (!m.duesHistory) m.duesHistory=[];
+  m.duesHistory.push({ date, amt, note, collectedAt:Date.now() });
+  if (m.dues===0) { m.duesSince=''; m.duesReason=''; }
+
+  saveLocal(); await saveCloud(m);
+  closeModal('modal-dues'); renderDashboard(); renderMembers(); renderAlarms();
+  toast(`✅ ₹${amt.toLocaleString('en-IN')} collected!` + (fbReady?' & synced':''));
+}
+
+// ══════════════════════════════════════════════════════════
+// DELETE
+// ══════════════════════════════════════════════════════════
+async function delMember(id) {
+  const m = members.find(x=>x.id===id);
+  if (!confirm(`Delete ${m?.name||'this member'}? Cannot be undone.`)) return;
+  members = members.filter(x=>x.id!==id);
+  saveLocal(); await deleteCloud(id);
+  renderDashboard(); renderMembers();
+  toast('🗑 Deleted' + (fbReady?' & removed from cloud':''));
+}
+
+// ══════════════════════════════════════════════════════════
+// ALARMS — from uploaded app + dues section
+// ══════════════════════════════════════════════════════════
+function renderAlarms() {
+  document.getElementById('alarm-last-check').textContent =
+    'Last checked: ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+
+  const lib = libMembers();
+  const expired = lib.filter(m=>statusOf(m)==='expired').sort((a,b)=>daysDiff(a.nextDate)-daysDiff(b.nextDate));
+  const expiring = lib.filter(m=>statusOf(m)==='expiring').sort((a,b)=>daysDiff(a.nextDate)-daysDiff(b.nextDate));
+  const withDues = lib.filter(m=>+m.dues>0).sort((a,b)=>(+b.dues)-(+a.dues));
+
+  // Dues list
+  document.getElementById('alarm-dues-list').innerHTML = withDues.length
+    ? withDues.map(m=>`<div class="alarm-card dues">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div style="flex:1;">
+            <div class="alarm-name">${m.name}</div>
+            <div class="alarm-info">S/o ${m.father} · 📞 <a href="tel:${m.mobile}" style="color:inherit;">${m.mobile}</a></div>
+            <div class="alarm-info">⏰ ${m.time||'—'} · Seat: ${m.seat||'—'}</div>
+            <div class="alarm-info" style="color:var(--blue);font-weight:700;margin-top:4px;">
+              Dues: ₹${(+m.dues).toLocaleString('en-IN')}${m.duesSince?' since '+fmtDate(m.duesSince):''}
+            </div>
+          </div>
+          <button class="btn btn-blue btn-sm" style="flex-shrink:0;" onclick="openDuesCollect('${m.id}')">💳 Collect</button>
+        </div>
+      </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;padding:8px 0;">🎉 No pending dues!</div>';
+
+  // Expired — from uploaded app
+  document.getElementById('alarm-expired-list').innerHTML = expired.length
+    ? expired.map(m=>`<div class="alarm-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div style="flex:1;">
+            <div class="alarm-name">${m.name}</div>
+            <div class="alarm-info">S/o ${m.father} · 📞 <a href="tel:${m.mobile}" style="color:inherit;">${m.mobile}</a></div>
+            <div class="alarm-info">⏰ ${m.time||'—'} · Seat: ${m.seat||'—'}</div>
+            <div class="alarm-info" style="color:var(--red);font-weight:700;margin-top:4px;">Expired: ${fmtDate(m.nextDate)} (${Math.abs(daysDiff(m.nextDate))} days overdue)</div>
+          </div>
+          <button class="btn btn-green btn-sm" style="flex-shrink:0;" onclick="openRenew('${m.id}')">Renew</button>
+        </div>
+      </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;padding:8px 0;">🎉 No expired memberships!</div>';
+
+  // Expiring — from uploaded app
+  document.getElementById('alarm-expiring-list').innerHTML = expiring.length
+    ? expiring.map(m=>`<div class="alarm-card warn">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div style="flex:1;">
+            <div class="alarm-name">${m.name}</div>
+            <div class="alarm-info">S/o ${m.father} · 📞 <a href="tel:${m.mobile}" style="color:inherit;">${m.mobile}</a></div>
+            <div class="alarm-info">⏰ ${m.time||'—'} · Seat: ${m.seat||'—'}</div>
+            <div class="alarm-info" style="color:var(--orange);font-weight:700;margin-top:4px;">Expires: ${fmtDate(m.nextDate)} (${daysDiff(m.nextDate)} days remaining)</div>
+          </div>
+          <button class="btn btn-green btn-sm" style="flex-shrink:0;" onclick="openRenew('${m.id}')">Renew</button>
+        </div>
+      </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;padding:8px 0;">🎉 No memberships expiring soon!</div>';
+
+  updateBadge();
+}
+
+// ══════════════════════════════════════════════════════════
+// REPORTS — from uploaded app
+// ══════════════════════════════════════════════════════════
+function renderReports() {
+  const isLib = curMode === 'library';
+  const sec = curMembers();
+  const total = sec.length||1;
+
+  if (isLib) {
+    const active=sec.filter(m=>statusOf(m)==='active').length;
+    const expiring=sec.filter(m=>statusOf(m)==='expiring').length;
+    const expired=sec.filter(m=>statusOf(m)==='expired').length;
+    const duesTotal=sec.filter(m=>+m.dues>0).reduce((s,m)=>s+(+m.dues),0);
+    const slots={}; sec.forEach(m=>{ if(m.time) slots[m.time]=(slots[m.time]||0)+1; });
+    const slotArr=Object.entries(slots).sort((a,b)=>b[1]-a[1]);
+    const maxS=Math.max(...slotArr.map(([,v])=>v),1);
+    const monthly={}; const months6=[];
+    for(let i=5;i>=0;i--){const d=new Date();d.setMonth(d.getMonth()-i);const k=d.toISOString().slice(0,7);months6.push(k);monthly[k]=0;}
+    sec.forEach(m=>{const k=(m.payDate||'').slice(0,7);if(monthly[k]!==undefined)monthly[k]+=(+m.fee||0);});
+    const maxM=Math.max(...Object.values(monthly),1);
+    const totalRev=Object.values(monthly).reduce((a,b)=>a+b,0);
+
+    document.getElementById('report-content').innerHTML = `
+      <div class="report-block"><h4>Overview</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:var(--surface2);border-radius:9px;padding:12px;text-align:center;"><div style="font-size:11px;color:var(--muted);">Total Members</div><div style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;">${sec.length}</div></div>
+          <div style="background:var(--surface2);border-radius:9px;padding:12px;text-align:center;"><div style="font-size:11px;color:var(--muted);">6-Month Revenue</div><div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--green);">₹${totalRev.toLocaleString('en-IN')}</div></div>
+          <div style="background:#eff6ff;border-radius:9px;padding:12px;text-align:center;"><div style="font-size:11px;color:var(--blue);">Total Dues</div><div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--blue);">₹${duesTotal.toLocaleString('en-IN')}</div></div>
+          <div style="background:var(--surface2);border-radius:9px;padding:12px;text-align:center;"><div style="font-size:11px;color:var(--muted);">Avg Monthly Fee</div><div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;">₹${sec.length?Math.round(sec.reduce((a,m)=>a+(+m.fee||0),0)/sec.length).toLocaleString('en-IN'):0}</div></div>
+        </div>
+      </div>
+      <div class="report-block"><h4>Membership Status</h4>
+        <div class="bar-row"><div class="bar-lbl"><span>✓ Active</span><span>${active}</span></div><div class="bar-track"><div class="bar-fill" style="width:${active/total*100}%;background:var(--green);"></div></div></div>
+        <div class="bar-row"><div class="bar-lbl"><span>⚠ Expiring (7d)</span><span>${expiring}</span></div><div class="bar-track"><div class="bar-fill" style="width:${expiring/total*100}%;background:var(--orange);"></div></div></div>
+        <div class="bar-row"><div class="bar-lbl"><span>✗ Expired</span><span>${expired}</span></div><div class="bar-track"><div class="bar-fill" style="width:${expired/total*100}%;background:var(--red);"></div></div></div>
+      </div>
+      ${slotArr.length?`<div class="report-block"><h4>Time Slot Distribution</h4>${slotArr.map(([s,c])=>`<div class="bar-row"><div class="bar-lbl"><span>${s}</span><span>${c} members</span></div><div class="bar-track"><div class="bar-fill" style="width:${c/maxS*100}%;"></div></div></div>`).join('')}</div>`:''}
+      <div class="report-block"><h4>Monthly Collection (Last 6 Months)</h4>
+        ${months6.map(k=>`<div class="bar-row"><div class="bar-lbl"><span>${k}</span><span style="color:var(--gold);font-weight:700;">₹${monthly[k].toLocaleString('en-IN')}</span></div><div class="bar-track"><div class="bar-fill" style="width:${monthly[k]/maxM*100}%;background:var(--gold);"></div></div></div>`).join('')}
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <button class="btn btn-dark btn-full" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="btn btn-outline btn-full" onclick="exportJSON()">💾 Backup</button>
+      </div>
+      <div style="background:var(--surface);border-radius:12px;padding:14px;box-shadow:var(--shadow);margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">Import Backup</div>
+        <input type="file" id="import-file" accept=".json" onchange="importJSON(event)" style="display:none">
+        <button class="btn btn-outline btn-full" onclick="document.getElementById('import-file').click()">⬆ Import Backup (.json)</button>
+      </div>`;
+  } else {
+    const batches={}; sec.forEach(m=>{ if(m.batch) batches[m.batch]=(batches[m.batch]||0)+1; });
+    const bArr=Object.entries(batches).sort((a,b)=>b[1]-a[1]);
+    const maxB=Math.max(...bArr.map(([,v])=>v),1);
+    const classes={}; sec.forEach(m=>{ if(m.class) classes[m.class]=(classes[m.class]||0)+1; });
+    const cArr=Object.entries(classes).sort((a,b)=>b[1]-a[1]);
+    const maxC=Math.max(...cArr.map(([,v])=>v),1);
+    const monthly={}; const m6=[];
+    for(let i=5;i>=0;i--){const d=new Date();d.setMonth(d.getMonth()-i);const k=d.toISOString().slice(0,7);m6.push(k);monthly[k]=0;}
+    sec.forEach(m=>{const k=(m.doa||'').slice(0,7);if(monthly[k]!==undefined)monthly[k]++;});
+    const maxM=Math.max(...Object.values(monthly),1);
+
+    document.getElementById('report-content').innerHTML = `
+      <div class="report-block"><h4>Overview</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:var(--surface2);border-radius:9px;padding:12px;text-align:center;"><div style="font-size:11px;color:var(--muted);">Total Students</div><div style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;">${sec.length}</div></div>
+          <div style="background:var(--surface2);border-radius:9px;padding:12px;text-align:center;"><div style="font-size:11px;color:var(--muted);">Total Batches</div><div style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;">${new Set(sec.map(m=>m.batch).filter(Boolean)).size}</div></div>
+        </div>
+      </div>
+      ${bArr.length?`<div class="report-block"><h4>Batch / Subject</h4>${bArr.map(([b,c])=>`<div class="bar-row"><div class="bar-lbl"><span>${b}</span><span>${c}</span></div><div class="bar-track"><div class="bar-fill" style="width:${c/maxB*100}%;"></div></div></div>`).join('')}</div>`:''}
+      ${cArr.length?`<div class="report-block"><h4>Class-wise</h4>${cArr.map(([cl,n])=>`<div class="bar-row"><div class="bar-lbl"><span>${cl}</span><span>${n}</span></div><div class="bar-track"><div class="bar-fill" style="width:${n/maxC*100}%;"></div></div></div>`).join('')}</div>`:''}
+      <div class="report-block"><h4>Monthly Admissions (Last 6 Months)</h4>
+        ${m6.map(k=>`<div class="bar-row"><div class="bar-lbl"><span>${k}</span><span>${monthly[k]} students</span></div><div class="bar-track"><div class="bar-fill" style="width:${monthly[k]/maxM*100}%;"></div></div></div>`).join('')}
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <button class="btn btn-dark btn-full" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="btn btn-outline btn-full" onclick="exportJSON()">💾 Backup</button>
+      </div>
+      <div style="background:var(--surface);border-radius:12px;padding:14px;box-shadow:var(--shadow);margin-bottom:10px;">
+        <input type="file" id="import-file2" accept=".json" onchange="importJSON(event)" style="display:none">
+        <button class="btn btn-outline btn-full" onclick="document.getElementById('import-file2').click()">⬆ Import Backup (.json)</button>
+      </div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// EXPORT / IMPORT — from uploaded app
+// ══════════════════════════════════════════════════════════
+function exportCSV() {
+  const isLib = curMode === 'library';
+  const sec = curMembers();
+  let hdr, rows;
+  if (isLib) {
+    hdr = ['Name','Father Name','Mobile','Seat','Monthly Fee (Rs)','Admission Fee (Rs)','Time Slot','Date of Payment','Next Due Date','Status','Days Left/Overdue','Dues (Rs)','Dues Since','Remarks'];
+    rows = sec.map(m => [m.name,m.father,m.mobile,m.seat||'',m.fee||0,m.admission||0,m.time||'',m.payDate||'',m.nextDate||'',statusOf(m).toUpperCase(),daysDiff(m.nextDate),m.dues||0,m.duesSince||'',m.remarks||'']);
+  } else {
+    hdr = ['Name','Date of Birth','Age','Father','Mother','Mobile 1','Mobile 2','Mobile 3','Class','School','Address','Father Qual','Father Occ','Mother Qual','Mother Occ','Batch','Timing','Remarks','Date of Admission'];
+    rows = sec.map(m => [m.name,m.dob||'',calcAge(m.dob),m.father,m.mother||'',m.mobile,m.mob2||'',m.mob3||'',m.class||'',m.school||'',m.address||'',m.fqual||'',m.focc||'',m.mqual||'',m.mocc||'',m.batch||'',m.timing||'',m.remarks||'',m.doa||'']);
+  }
+  const csv = [hdr,...rows].map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+  dl('AGAM_'+curMode+'_'+today()+'.csv','data:text/csv;charset=utf-8,'+encodeURIComponent(csv));
+  toast('✅ CSV exported!');
+}
+
+function exportJSON() {
+  dl('AGAM_Backup_'+today()+'.json','data:application/json,'+encodeURIComponent(JSON.stringify({members,exportedAt:new Date().toISOString()},null,2)));
+  toast('✅ Backup saved!');
+}
+
+function importJSON(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = async evt => {
+    try {
+      const d = JSON.parse(evt.target.result);
+      if (d.members && Array.isArray(d.members)) {
+        members = d.members; saveLocal(); renderDashboard();
+        toast(`✅ Imported ${members.length} members!`);
+      } else toast('❌ Invalid backup file');
+    } catch { toast('❌ Could not read file'); }
+  };
+  r.readAsText(file); e.target.value='';
+}
+
+function dl(filename, dataUrl) { const a=document.createElement('a'); a.href=dataUrl; a.download=filename; a.click(); }
+
+// ══════════════════════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════════════════════
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.overlay').forEach(o => { o.addEventListener('click', e => { if(e.target===o) closeModal(o.id); }); });
+
+// ══════════════════════════════════════════════════════════
+// NOTIFICATIONS — from uploaded app
+// ══════════════════════════════════════════════════════════
+function checkAndNotify() {
+  updateBadge();
+  const expired = libMembers().filter(m=>statusOf(m)==='expired');
+  const expiring = libMembers().filter(m=>statusOf(m)==='expiring');
+  const withDues = libMembers().filter(m=>+m.dues>0);
+  if ((expired.length||expiring.length||withDues.length) && 'Notification' in window && Notification.permission==='granted') {
+    new Notification('AGAM Library Alert 🔔', {
+      body: [expired.length&&`${expired.length} expired`, expiring.length&&`${expiring.length} expiring`, withDues.length&&`${withDues.length} with dues`].filter(Boolean).join(', '),
+      icon:'./icon-192.png', tag:'agam-alert'
+    });
+  }
+}
+if ('Notification' in window && Notification.permission==='default') Notification.requestPermission();
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+setTimeout(() => {
+  document.getElementById('splash').classList.add('hide');
+  setTimeout(() => document.getElementById('splash').remove(), 500);
+}, 2000);
+
+loadFBConfig();
+renderDashboard();
+setInterval(checkAndNotify, 60000);
+checkAndNotify();
+</script>
+</body>
+</html>
